@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta name="viewport" content="width=device-width,user-scalable=0" charset="UTF-8">
+    <title>WiFi Setting</title>
+</head>
+
+<script type="application/javascript">
+    function on_click_scan() {
+        // this api is a block method
+        fetch("api/scan_wifi").then(
+            response => {
+                if (response.ok) return response.json();
+            }
+        ).then(data => {
+            let select = document.getElementsByName("ssid")[0];
+            select.innerHTML = "";
+            for (var i = 0; i < data.length; i++) {
+                select.add(new Option(data[i], data[i]));
+            }
+        })
+    }
+</script>
+
+<body>
+<h1>WiFi Settings</h1>
+<form method="POST" action="api/set_wifi">
+    <label>SSID: </label>
+    <select name="ssid">
+        <!--comments below is a template used by task_wifi.cpp-->
+        %WIFI_OPTIONS%
+    </select>
+    <br><br>Password: <input name="pass" length=64 type="password">
+    <br><br>
+    <input type="submit">
+</form>
+<br><br><br>
+<button onclick="on_click_scan()">&gt; Scan &lt;</button>
+</body>
+
+</html>

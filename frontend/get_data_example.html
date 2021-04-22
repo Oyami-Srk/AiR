@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Get data from AiR Example</title>
+    <meta name="viewport" content="width=device-width,user-scalable=0" charset="UTF-8">
+</head>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.1.0/chart.js"
+    integrity="sha512-LlFvdZpYhQdASf4aZfSpmyHD6+waYVfJRwfJrBgki7/Uh+TXMLFYcKMRim65+o3lFsfk20vrK9sJDute7BUAUw=="
+    crossorigin="anonymous"></script>
+
+<script type="application/javascript">
+    // let server_address = "http://192.168.3.26/api/get_raw_data";
+    let all_data_api = "/data.sav";
+    let current_data_api = "/current_data.dat"
+
+    let all_data_api = "/api/get_raw_data"
+    function get_all_data() {
+        return fetch(all_data_api).then(
+            resp => { if (resp.ok) return resp.arrayBuffer(); }
+        ).then(
+            arraybuffer => {
+                start_point = 4;
+                result = [];
+                for (var i = start_point; i < arraybuffer.byteLength; i += 32) {
+                    sub_buffer = arraybuffer.slice(i, i + 32);
+                    let time_view = new Uint32Array(sub_buffer, 0, 1);
+                    let co2_view = new Uint32Array(sub_buffer, 4, 1);
+                    let pms_view = new Uint16Array(sub_buffer, 8, 12);
+                    result.push({
+                        time: time_view[0],
+                        co2: co2_view[0],
+                        pm_1_0_fe: pms_view[0],
+                        pm_2_5_fe: pms_view[1],
+                        pm_10_0_fe: pms_view[2],
+                        pm_1_0_ae: pms_view[3],
+                        pm_2_5_ae: pms_view[4],
+                        pm_10_0_ae: pms_view[5],
+                        above_0_3_um: pms_view[6],
+                        above_0_5_um: pms_view[7],
+                        above_1_0_um: pms_view[8],
+                        above_2_5_um: pms_view[9],
+                        temp: pms_view[10] / 10.0,
+                        humd: pms_view[11] / 10.0
+                    });
+                }
+                return result;
+            }
+        );
+    }
+
+    function get_current_data(f) {
+        fetch(current_data_api).then(
+            resp => {
+                if (resp.ok)
+                    return resp.arrayBuffer();
+            }
+        ).then(
+            arraybuffer => {
+                let time_view = new Uint32Array(arraybuffer, 0, 1);
+                let co2_view = new Uint32Array(arraybuffer, 4, 1);
+                let pms_view = new Uint16Array(arraybuffer, 8, 12);
+                return {
+                    time: time_view[0],
+                    co2: co2_view[0],
+                    pm_1_0_fe: pms_view[0],
+                    pm_2_5_fe: pms_view[1],
+                    pm_10_0_fe: pms_view[2],
+                    pm_1_0_ae: pms_view[3],
+                    pm_2_5_ae: pms_view[4],
+                    pm_10_0_ae: pms_view[5],
+                    above_0_3_um: pms_view[6],
+                    above_0_5_um: pms_view[7],
+                    above_1_0_um: pms_view[8],
+                    above_2_5_um: pms_view[9],
+                    temp: pms_view[10] / 10.0,
+                    humd: pms_view[11] / 10.0
+                };
+            }
+        ).then(
+            result => {
+                f(result);
+            }
+        );
+    }
+
+    function print_data(datas) {
+        var ctx = document.getElementById("myChart").getContext("2d");
+        var myChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: datas.map(({ time }) => {
+                    date = new Date(time * 1000);
+                    return date.toLocaleTimeString();
+                }),
+                datasets: [{
+                    label: 'CO2',
+                    data: datas.map(({ co2 }) => co2),
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.2)',
+                    ],
+                    borderColor: [
+                        'rgba(255,99,132,1)',
+                    ],
+                    borderWidth: 1
+                }, {
+                    label: 'Temp',
+                    data: datas.map(({ temp }) => temp),
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.2)',
+                    ],
+                    borderColor: [
+                        'rgba(255,99,132,1)',
+                    ],
+                    borderWidth: 1
+                },
+                {
+                    label: 'Humd',
+                    data: datas.map(({ humd }) => humd),
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.2)',
+                    ],
+                    borderColor: [
+                        'rgba(255,99,132,1)',
+                    ],
+                    borderWidth: 1
+                },
+                {
+                    label: 'PM2.5',
+                    data: datas.map(({ pm_2_5_ae }) => pm_2_5_ae),
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.2)',
+                    ],
+                    borderColor: [
+                        'rgba(255,99,132,1)',
+                    ],
+                    borderWidth: 1,
+                    pointDot: false,
+                    bezierCurve: true,
+                }
+
+                ]
+            },
+            options: {
+                scales: {
+                    yAxes: [{
+                        ticks: {
+                            beginAtZero: true
+                        }
+                    }]
+                },
+                pointRadius: 0,
+                tension: 0.1,
+
+            }
+        });
+    }
+
+    get_all_data(print_data);
+    get_current_data(data => {
+        document.getElementById("co2").innerText = data['co2'];
+        document.getElementById("temp").innerText = data['temp'];
+        document.getElementById("humd").innerText = data['humd'];
+        document.getElementById("pm25").innerText = data['pm_2_5_ae'];
+    });
+
+</script>
+
+<body>
+    <h1> CO2: <span id="co2"></span> ppm</h1><br>
+    <h1> Temp: <span id="temp"></span> °C</h1><br>
+    <h1> Humd: <span id="humd"></span> %</h1><br>
+    <h1> PM2.5: <span id="pm25"></span> ug/m3</h1><br>
+    <canvas id="myChart" width="400" height="400"></canvas>
+</body>
+
+</html>

@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AiR空气质量检测仪</title>
+</head>
+
+
+<body>
+
+    <div class="page-header bg-azure-lt custom-header">
+        <div class="row align-items-center">
+            <div class="col">
+                <div class="page-pretitle">
+                    AiR空气质量检测仪
+                </div>
+                <h2 class="page-title custom-h2-title">
+                    监控面板
+                </h2>
+            </div>
+            <div class="col-auto ms-auto">
+                <div class="btn-list">
+                    <span class="d-none d-sm-inline">
+                        <a href="#" class="btn btn-white">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-wifi" width="24"
+                                height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
+                                stroke-linecap="round" stroke-linejoin="round">
+                                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                <line x1="12" y1="18" x2="12.01" y2="18"></line>
+                                <path d="M9.172 15.172a4 4 0 0 1 5.656 0"></path>
+                                <path d="M6.343 12.343a8 8 0 0 1 11.314 0"></path>
+                                <path d="M3.515 9.515c4.686 -4.687 12.284 -4.687 17 0"></path>
+                            </svg>
+                            WiFi设置
+                        </a>
+                    </span>
+                    <a href="#" class="btn d-none d-sm-inline-block" data-bs-toggle="modal"
+                        data-bs-target="#modal-report">
+                        <?xml version="1.0" encoding="utf-8"?>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-router" width="24"
+                            height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                            <rect x="3" y="13" width="18" height="8" rx="2"></rect>
+                            <line x1="17" y1="17" x2="17" y2="17.01"></line>
+                            <line x1="13" y1="17" x2="13" y2="17.01"></line>
+                            <line x1="15" y1="13" x2="15" y2="11"></line>
+                            <path d="M11.75 8.75a4 4 0 0 1 6.5 0"></path>
+                            <path d="M8.5 6.5a8 8 0 0 1 13 0"></path>
+                        </svg>
+                        MQTT设置
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div>
+
+        <div class="col-md-6">
+            <div class="card card-small">
+                <div class="ribbon bg-green">
+                    <span id="co2_status" class="cus-co2-status">略高</span>
+                </div>
+                <div class="card-status-start bg-green"></div>
+                <div class="card-body">
+                    <h3 class="card-title"><svg xmlns="czhttp://www.w3.org/2000/svg"
+                            class="icon icon-tabler icon-tabler-chart-bubble" width="24" height="24" viewBox="0 0 24 24"
+                            stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round"
+                            stroke-linejoin="round">
+                            <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                            <circle cx="6" cy="14" r="3"></circle>
+                            <circle cx="16" cy="17" r="2"></circle>
+                            <circle cx="14.5" cy="5.5" r="4.5"></circle>
+                        </svg>二氧化碳浓度</h3>
+                    <p>
+                    <h1 class="cus-h1-co2-title">CO<sub>2</sub></h1>
+                    <h1 class="cus-h1-co2-value"><span id="co2_value"></span><span class="cus-h1-co2-ppm">ppm</span>
+                    </h1>
+                    </p>
+                    <div class="progress progress-sm mb-2 cus-co2-progress">
+                        <div class="progress-bar bg-green" style="width: 100%" role="progressbar" aria-valuenow="100"
+                            aria-valuemin="0" aria-valuemax="100">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <div class="col-md-6 pm2-5">
+            <div class="card card-small">
+                <div class="card-status-start bg-green"></div>
+                <div class="card-body">
+                    <h3 class="card-title">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-wind" width="24"
+                            height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                            <path d="M5 8h8.5a2.5 2.5 0 1 0 -2.34 -3.24"></path>
+                            <path d="M3 12h15.5a2.5 2.5 0 1 1 -2.34 3.24"></path>
+                            <path d="M4 16h5.5a2.5 2.5 0 1 1 -2.34 3.24"></path>
+                        </svg>
+                        PM2.5
+                    </h3>
+                    <p>
+                    <h1 class="cus-h1-co2-title"><span id="pm25_value"></span></h1>
+                    <h1 class="cus-h1-co2-value">µg/m<sup>3</sup></h1>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card card-small">
+                <div class="card-status-start bg-green"></div>
+                <div class="card-body">
+                    <h3 class="card-title">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-temperature"
+                            width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
+                            fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                            <path d="M10 13.5a4 4 0 1 0 4 0v-8.5a2 2 0 0 0 -4 0v8.5"></path>
+                            <line x1="10" y1="9" x2="14" y2="9"></line>
+                        </svg>
+                        温度
+                    </h3>
+                    <p>
+                    <h1 class="cus-h1-co2-title" style="width:4em">
+                        <span id="temp_value">
+                        </span>
+                        <span style="width: 1em"></span>
+                        <span style="float:right;">
+                            &#8451;
+                        </span>
+                    </h1>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card card-small">
+                <div class="card-status-start bg-green"></div>
+                <div class="card-body">
+                    <h3 class="card-title">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-droplet" width="24"
+                            height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                            <path d="M6.8 11a6 6 0 1 0 10.396 0l-5.197 -8l-5.2 8z"></path>
+                        </svg>
+                        湿度
+                    </h3>
+                    <p>
+                    <h1 class="cus-h1-co2-title" style="width:4em">
+                        <span id="humd_value">
+                        </span>
+                        <span style="width: 1em"></span>
+                        <span style="float:right;">
+                            %
+                        </span>
+                    </h1>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="card card-stacked card-big">
+        <div class="card-body">
+            <h2 class="card-title">历史数据</h2>
+            <canvas width="auto" height="auto" id="chart1">
+            </canvas>
+        </div>
+    </div>
+
+</body>
+
+<script src="https://unpkg.com/@tabler/core@latest/dist/js/tabler.min.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/@tabler/core@latest/dist/css/tabler.min.css">
+<style>
+    html,
+    body {
+        height: 100%;
+        display: flex;
+        flex-flow: column;
+    }
+
+    .custom-header {
+        padding-left: 2em;
+        padding-right: 2em;
+        padding-top: 2em;
+        padding-bottom: 2em;
+    }
+
+    .custom-h2-title {
+        font-size: 1.75rem;
+    }
+
+    .card-small {
+        height: 10em;
+    }
+
+    .col-md-6 {
+        margin: 3em;
+        margin-right: 1em;
+        width: min-content;
+        white-space: nowrap;
+        display: inline-table;
+        height: auto;
+        box-sizing: border-box;
+    }
+
+    .cus-h1-co2-title {
+        font-size: 2rem;
+        display: inline-block;
+    }
+
+    .cus-h1-co2-ppm {
+        font-size: 1rem;
+        color: gray;
+    }
+
+    .cus-h1-co2-value {
+        font-size: 2rem;
+        float: right;
+    }
+
+    .cus-co2-progress {
+        width: 24em;
+    }
+
+    .cus-co2-status {
+        font-size: 1.55em;
+    }
+
+    .pm2-5 {
+        width: 20em;
+    }
+
+    .card-big {
+        margin: 3em;
+        margin-top: 0em;
+        flex: 1 1 auto;
+    }
+</style>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.1.0/chart.js"
+    integrity="sha512-LlFvdZpYhQdASf4aZfSpmyHD6+waYVfJRwfJrBgki7/Uh+TXMLFYcKMRim65+o3lFsfk20vrK9sJDute7BUAUw=="
+    crossorigin="anonymous"></script>
+
+<script type="application/javascript">
+    // let server_address = "http://192.168.3.26/api/get_raw_data";
+    let all_data_api = "/data.sav";
+    let current_data_api = "/current_data.dat"
+
+    function get_all_data(all_data_api = "/api/get_raw_data") {
+        return fetch(all_data_api).then(
+            resp => { if (resp.ok) return resp.arrayBuffer(); }
+        ).then(
+            arraybuffer => {
+                start_point = 4;
+                result = [];
+                for (var i = start_point; i < arraybuffer.byteLength; i += 32) {
+                    sub_buffer = arraybuffer.slice(i, i + 32);
+                    let time_view = new Uint32Array(sub_buffer, 0, 1);
+                    let co2_view = new Uint32Array(sub_buffer, 4, 1);
+                    let pms_view = new Uint16Array(sub_buffer, 8, 12);
+                    result.push({
+                        time: time_view[0],
+                        co2: co2_view[0],
+                        pm_1_0_fe: pms_view[0],
+                        pm_2_5_fe: pms_view[1],
+                        pm_10_0_fe: pms_view[2],
+                        pm_1_0_ae: pms_view[3],
+                        pm_2_5_ae: pms_view[4],
+                        pm_10_0_ae: pms_view[5],
+                        above_0_3_um: pms_view[6],
+                        above_0_5_um: pms_view[7],
+                        above_1_0_um: pms_view[8],
+                        above_2_5_um: pms_view[9],
+                        temp: pms_view[10] / 10.0,
+                        humd: pms_view[11] / 10.0
+                    });
+                }
+                return result;
+            }
+        );
+    }
+
+    function get_current_data(current_data_api = "/api/get_current_data") {
+        return fetch(current_data_api).then(
+            resp => {
+                if (resp.ok)
+                    return resp.arrayBuffer();
+            }
+        ).then(
+            arraybuffer => {
+                let time_view = new Uint32Array(arraybuffer, 0, 1);
+                let co2_view = new Uint32Array(arraybuffer, 4, 1);
+                let pms_view = new Uint16Array(arraybuffer, 8, 12);
+                return {
+                    time: time_view[0],
+                    co2: co2_view[0],
+                    pm_1_0_fe: pms_view[0],
+                    pm_2_5_fe: pms_view[1],
+                    pm_10_0_fe: pms_view[2],
+                    pm_1_0_ae: pms_view[3],
+                    pm_2_5_ae: pms_view[4],
+                    pm_10_0_ae: pms_view[5],
+                    above_0_3_um: pms_view[6],
+                    above_0_5_um: pms_view[7],
+                    above_1_0_um: pms_view[8],
+                    above_2_5_um: pms_view[9],
+                    temp: pms_view[10] / 10.0,
+                    humd: pms_view[11] / 10.0
+                };
+            }
+        );
+    }
+
+    function print_data(datas) {
+        datas.sort((f, s) => { return f.time - s.time }); // sort by time
+        datas.filter((v, index, self) => self.findIndex(t => t.time === v.time) === index); // filter out same time
+
+        var ctx = document.getElementById("chart1").getContext("2d");
+        var myChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: datas.map(({ time }) => {
+                    date = new Date(time * 1000);
+                    return date.toLocaleTimeString();
+                }),
+                datasets: [{
+                    label: 'CO2',
+                    data: datas.map(({ co2 }) => co2),
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.2)',
+                    ],
+                    borderColor: [
+                        'rgba(255,99,132,1)',
+                    ],
+                    borderWidth: 1
+                }, {
+                    label: 'Temp',
+                    data: datas.map(({ temp }) => temp),
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.2)',
+                    ],
+                    borderColor: [
+                        'rgba(255,99,132,1)',
+                    ],
+                    borderWidth: 1
+                },
+                {
+                    label: 'Humd',
+                    data: datas.map(({ humd }) => humd),
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.2)',
+                    ],
+                    borderColor: [
+                        'rgba(255,99,132,1)',
+                    ],
+                    borderWidth: 1
+                },
+                {
+                    label: 'PM2.5',
+                    data: datas.map(({ pm_2_5_ae }) => pm_2_5_ae),
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.2)',
+                    ],
+                    borderColor: [
+                        'rgba(255,99,132,1)',
+                    ],
+                    borderWidth: 1,
+                    pointDot: false,
+                    bezierCurve: true,
+                }
+
+                ]
+            },
+            options: {
+                scales: {
+                    yAxes: [{
+                        ticks: {
+                            beginAtZero: true
+                        }
+                    }]
+                },
+                pointRadius: 0,
+                tension: 0.1,
+            }
+        });
+    }
+
+    get_all_data(all_data_api).then(print_data);
+
+    get_current_data(current_data_api).then(
+        data => {
+            var co2 = data['co2'];
+            document.getElementById("co2_value").innerText = co2;
+            var co2_status = document.getElementById("co2_status");
+            var co2_color = "";
+            if (co2 <= 500) {
+                co2_color = "green";
+                co2_status.innerText = "良好";
+            } else if (co2 <= 999) {
+                co2_color = "azure";
+                co2_status.innerText = "正常";
+            } else if (co2 <= 1999) {
+                co2_color = "orange";
+                co2_status.innerText = "略高";
+            } else if (co2 <= 2999) {
+                co2_color = "red";
+                co2_status.innerText = "过高";
+            } else {
+                co2_color = "darkred";
+                co2_status.innerText = "超高";
+            }
+            document.getElementById("temp_value").innerText = data['temp'];
+            document.getElementById("humd_value").innerText = data['humd'];
+            document.getElementById("pm25_value").innerText = data['pm_2_5_ae'];
+        });
+
+</script>
+
+
+</html>

@@ -1,0 +1,501 @@
+
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Get data from AiR Example</title>
+    <meta name="viewport" content="width=device-width,user-scalable=0" charset="UTF-8">
+</head>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.1.0/chart.js"
+    integrity="sha512-LlFvdZpYhQdASf4aZfSpmyHD6+waYVfJRwfJrBgki7/Uh+TXMLFYcKMRim65+o3lFsfk20vrK9sJDute7BUAUw=="
+    crossorigin="anonymous"></script>
+
+<script type="application/javascript">
+    // let server_address = "http://192.168.3.26/api/get_raw_data";
+    let all_data_api = "/data.sav";
+    let current_data_api = "/current_data.dat"
+
+    function get_all_data(f) {
+        fetch(all_data_api).then(
+            resp => {
+                if (resp.ok)
+                    return resp.arrayBuffer();
+            }
+        ).then(
+            arraybuffer => {
+                start_point = 4;
+                result = [];
+
+                for (var i = start_point; i < arraybuffer.byteLength; i += 32) {
+                    sub_buffer = arraybuffer.slice(i, i + 32);
+                    let time_view = new Uint32Array(sub_buffer, 0, 1);
+                    let co2_view = new Uint32Array(sub_buffer, 4, 1);
+                    let pms_view = new Uint16Array(sub_buffer, 8, 12);
+                    result.push({
+                        time: time_view[0],
+                        co2: co2_view[0],
+                        pm_1_0_fe: pms_view[0],
+                        pm_2_5_fe: pms_view[1],
+                        pm_10_0_fe: pms_view[2],
+                        pm_1_0_ae: pms_view[3],
+                        pm_2_5_ae: pms_view[4],
+                        pm_10_0_ae: pms_view[5],
+                        above_0_3_um: pms_view[6],
+                        above_0_5_um: pms_view[7],
+                        above_1_0_um: pms_view[8],
+                        above_2_5_um: pms_view[9],
+                        temp: pms_view[10] / 10.0,
+                        humd: pms_view[11] / 10.0
+                    });
+                }
+                return result;
+            }
+        ).then(
+            result => {
+                f(result);
+            }
+        );
+    }
+
+    function get_current_data(f) {
+        fetch(current_data_api).then(
+            resp => {
+                if (resp.ok)
+                    return resp.arrayBuffer();
+            }
+        ).then(
+            arraybuffer => {
+                let time_view = new Uint32Array(arraybuffer, 0, 1);
+                let co2_view = new Uint32Array(arraybuffer, 4, 1);
+                let pms_view = new Uint16Array(arraybuffer, 8, 12);
+                return {
+                    time: time_view[0],
+                    co2: co2_view[0],
+                    pm_1_0_fe: pms_view[0],
+                    pm_2_5_fe: pms_view[1],
+                    pm_10_0_fe: pms_view[2],
+                    pm_1_0_ae: pms_view[3],
+                    pm_2_5_ae: pms_view[4],
+                    pm_10_0_ae: pms_view[5],
+                    above_0_3_um: pms_view[6],
+                    above_0_5_um: pms_view[7],
+                    above_1_0_um: pms_view[8],
+                    above_2_5_um: pms_view[9],
+                    temp: pms_view[10] / 10.0,
+                    humd: pms_view[11] / 10.0
+                };
+            }
+        ).then(
+            result => {
+                f(result);
+            }
+        );
+    }
+
+    function print_data(datas) {
+        var ctx = document.getElementById("myChart").getContext("2d");
+        var myChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: datas.map(({ time }) => {
+                    date = new Date(time * 1000);
+                    return date.toLocaleTimeString();
+                }),
+                datasets: [{
+                    label: 'CO2',
+                    data: datas.map(({ co2 }) => co2),
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.2)',
+                    ],
+                    borderColor: [
+                        'rgba(255,99,132,1)',
+                    ],
+                    borderWidth: 1
+                }, {
+                    label: 'Temp',
+                    data: datas.map(({ temp }) => temp),
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.2)',
+                    ],
+                    borderColor: [
+                        'rgba(255,99,132,1)',
+                    ],
+                    borderWidth: 1
+                },
+                {
+                    label: 'Humd',
+                    data: datas.map(({ humd }) => humd),
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.2)',
+                    ],
+                    borderColor: [
+                        'rgba(255,99,132,1)',
+                    ],
+                    borderWidth: 1
+                },
+                {
+                    label: 'PM2.5',
+                    data: datas.map(({ pm_2_5_ae }) => pm_2_5_ae),
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.2)',
+                    ],
+                    borderColor: [
+                        'rgba(255,99,132,1)',
+                    ],
+                    borderWidth: 1,
+                    pointDot: false,
+                    bezierCurve: true,
+                }
+
+                ]
+            },
+            options: {
+                scales: {
+                    yAxes: [{
+                        ticks: {
+                            beginAtZero: true
+                        }
+                    }]
+                },
+                pointRadius: 0,
+                tension: 0.1,
+
+            }
+        });
+    }
+
+    get_all_data(print_data);
+    get_current_data(data => {
+        document.getElementById("co2").innerText = data['co2'];
+        document.getElementById("temp").innerText = data['temp'];
+        document.getElementById("humd").innerText = data['humd'];
+        document.getElementById("pm25").innerText = data['pm_2_5_ae'];
+    });
+
+</script>
+
+<body>
+    <div class="jumian">
+        <style>
+            .jumian{
+                padding-left: 1.5rem;
+                padding-right: 1.5rem;
+                width: 100%;
+                margin-left: auto;
+                margin-right: auto;
+            }
+        </style>
+
+
+            <h1 class="ptsssj">平台实时数据</h1>
+    
+    <style>
+        .ptsssj{
+            text-align: center;
+            color: #5a5c69!important;
+            margin-bottom: 10!important;
+        }
+        *,::after,::before{
+            box-sizing: border-box;
+        }
+        h1{
+            display: block;
+            margin-block-start: 0.67em;
+            margin-block-end: 0.67em;
+            margin-inline-start: 0;
+            margin-inline-end: 0;
+            font-weight: bold;
+        }
+        html{
+            font-family: sans-serif;
+            -webkit-text-size-adjust: 100%;
+            -webkit-tap-highlight-color: transparent;
+        }
+        body{
+            margin: 0;
+            font-size: 1rem;
+            font-weight: 400;
+            line-height: 1.5;
+            color: #858796;
+            background-color: #fff;
+        }
+        div{
+            display: block;
+        }
+    </style>
+<div class="temp1">
+    <div class="tempdiv"><div class="tempdivbody">
+        <div class="tempdivtext"><div class="temp2hang"> 
+            <div class="tempfirst">Temp(°C):</div><div id="temp"></div></div></div></div>
+</div></div><br>
+    <style>
+        .temp1{
+            height: 25%;
+            margin-bottom:1.5rem!important;
+            position: relative;
+            width: 100%;
+            padding-right: .75rem;
+            padding-left: .75rem; 
+       }
+        .tempdiv{
+            padding-top: .5rem!important;
+            width: 100%;
+            border-left:.25rem solid #4e73df!important ;
+            padding-bottom: .5rem!important;
+            height: 100%!important;
+            box-shadow: 0.15rem 1.75rem 0 rgba(58,59,69,.15)!important;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            word-wrap: break-word;
+            background-color: #fff;
+            background-clip: border-box;
+            border: 1px solid #e3e5f0;
+            border-radius: .35rem;
+        }
+        .tempdivbody{
+            flex: 1 1 auto;
+            padding: 1.25rem;
+        }
+        .tempdivtext{
+            align-items: center!important;
+            margin-right: 0;
+            margin-left: 0;
+            display: flex;
+            flex-wrap: wrap;
+        }
+        .temp2hang{
+            padding-left: 0 ;
+            padding-right: 0;
+            margin-right: .5rem!important;
+            flex-basis: 0;
+            flex-grow: 1;
+            max-width: 100%;
+            width: 100%;
+            position: relative;
+        }
+        .tempfirst{
+            font-size: .7rem;
+            color: #4e73df!important;
+            font-weight: 700!important;
+            text-transform: uppercase!important;
+            margin-bottom: .25rem!important;
+        }
+        .temp{
+            color: #5a5c69!important;
+            font-weight: 700!important;
+            margin-bottom: 0!important;
+            font-size: 1.25rem;
+            line-height: 1.2;
+        }
+    </style>
+<div class="humd1">
+    <div class="humddiv"><div class="humdbody">
+        <div class="humdtext"><div class="humd2hang">
+            <div class="humdfirst">Humd(%):</div><div id="humd"></div></div></div></div>
+</div></div>
+        <style>
+            .humd1{
+                height: 75px;
+                margin-bottom:1.5rem!important;
+                position: relative;
+                width: 100%;
+                padding-right: .75rem;
+                padding-left: .75rem; 
+           }
+            .humddiv{
+                width: 100%;
+                padding-top: .5rem!important;
+                border-left:.25rem solid #20c9a6!important ;
+                padding-bottom: .5rem!important;
+                height: 100%!important;
+                box-shadow: 0.15rem 1.75rem 0 rgba(58,59,69,.15)!important;
+                position: relative;
+                display: flex;
+                flex-direction: column;
+                min-width: 0;
+                word-wrap: break-word;
+                background-color: #fff;
+                background-clip: border-box;
+                border: 1px solid #e3e5f0;
+                border-radius: .35rem;
+            }
+            .humddivbody{
+                flex: 1 1 auto;
+                padding: 1.25rem;
+            }
+            .humddivtext{
+                align-items: center!important;
+                margin-right: 0;
+                margin-left: 0;
+                display: flex;
+                flex-wrap: wrap;
+            }
+            .humd2hang{
+                padding-left: 0 ;
+                padding-right: 0;
+                margin-right: .5rem!important;
+                flex-basis: 0;
+                flex-grow: 1;
+                max-width: 100%;
+                width: 100%;
+                position: relative;
+            }
+            .humdfirst{
+                padding-top: 1.25rem;
+                padding-left: 1rem;
+                font-size: .7rem;
+                color: #20c9a6!important;
+                font-weight: 700!important;
+                text-transform: uppercase!important;
+                margin-bottom: .25rem!important;
+            }
+            .humd{
+                color: #5a5c69!important;
+                font-weight: 700!important;
+                margin-bottom: 0!important;
+                font-size: 1.25rem;
+                line-height: 1.2;
+            }
+    </style>
+<br>
+    <div class="co21">
+        <div class="co2div"><div class="co2divbody">
+            <div class="co2divtext"><div class="co22hang"> 
+                <div class="co2first">CO2(ppm):</div><span id="co2"></span></div></div></div>
+    </div></div>
+        <style>
+            .co21{
+                height: 25%;
+                margin-bottom:1.5rem!important;
+                position: relative;
+                width: 100%;
+                padding-right: .75rem;
+                padding-left: .75rem; 
+           }
+            .co2div{
+                width: 100%;
+                padding-top: .5rem!important;
+                border-left:.25rem solid #20c9a6!important ;
+                padding-bottom: .5rem!important;
+                height: 100%!important;
+                box-shadow: 0.15rem 1.75rem 0 rgba(58,59,69,.15)!important;
+                position: relative;
+                display: flex;
+                flex-direction: column;
+                min-width: 0;
+                word-wrap: break-word;
+                background-color: #fff;
+                background-clip: border-box;
+                border: 1px solid #e3e5f0;
+                border-radius: .35rem;
+            }
+            .co2divbody{
+                flex: 1 1 auto;
+                padding: 1.25rem;
+            }
+            .co2divtext{
+                align-items: center!important;
+                margin-right: 0;
+                margin-left: 0;
+                display: flex;
+                flex-wrap: wrap;
+            }
+            .co22hang{
+                padding-left: 0 ;
+                padding-right: 0;
+                margin-right: .5rem!important;
+                flex-basis: 0;
+                flex-grow: 1;
+                max-width: 100%;
+                width: 100%;
+                position: relative;
+            }
+            .co2first{
+                font-size: .7rem;
+                color: #20c9a6!important;
+                font-weight: 700!important;
+                text-transform: uppercase!important;
+                margin-bottom: .25rem!important;
+            }
+            .co2{
+                color: #5a5c69!important;
+                font-weight: 700!important;
+                margin-bottom: 0!important;
+                font-size: 1.25rem;
+                line-height: 1.2;
+            }
+        </style>
+        <br>
+        <div class="pm251">
+            <div class="pm25div"><div class="pm25divbody">
+                <div class="pm25divtext"><div class="pm252hang"> 
+                    <div class="pm25first">PM2.5(ug/3):</div><span id="pm25"></span></div></div></div></div>
+            <style>
+                .pm251{
+                    height: 25%;
+                    margin-bottom:1.5rem!important;
+                    position: relative;
+                    width: 100%;
+                    padding-right: .75rem;
+                    padding-left: .75rem; 
+               }
+                .pm25div{
+                    width: 100%;
+                    padding-top: .5rem!important;
+                    border-left:.25rem solid #f6c23e!important ;
+                    padding-bottom: .5rem!important;
+                    height: 100%!important;
+                    box-shadow: 0.15rem 1.75rem 0 rgba(58,59,69,.15)!important;
+                    position: relative;
+                    display: flex;
+                    flex-direction: column;
+                    min-width: 0;
+                    word-wrap: break-word;
+                    background-color: #fff;
+                    background-clip: border-box;
+                    border: 1px solid #e3e5f0;
+                    border-radius: .35rem;
+                }
+                .pm25divbody{
+                    flex: 1 1 auto;
+                    padding: 1.25rem;
+                }
+                .pm25divtext{
+                    align-items: center!important;
+                    margin-right: 0;
+                    margin-left: 0;
+                    display: flex;
+                    flex-wrap: wrap;
+                }
+                .pm252hang{
+                    padding-left: 0 ;
+                    padding-right: 0;
+                    margin-right: .5rem!important;
+                    flex-basis: 0;
+                    flex-grow: 1;
+                    max-width: 100%;
+                    width: 100%;
+                    position: relative;
+                }
+                .pm25first{
+                    font-size: .7rem;
+                    color: #f6c23e!important;
+                    font-weight: 700!important;
+                    text-transform: uppercase!important;
+                    margin-bottom: .25rem!important;
+                }
+                .pm25{
+                    color: #5a5c69!important;
+                    font-weight: 700!important;
+                    margin-bottom: 0!important;
+                    font-size: 1.25rem;
+                    line-height: 1.2;
+                }
+            </style>
+                <tr><td><canvas id="myChart" width="400" height="400" ></td></canvas>
+</div>
+</body>
+</html>
