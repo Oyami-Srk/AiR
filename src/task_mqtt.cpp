@@ -1,7 +1,6 @@
 //
 // Created by Shiroko on 2021/4/17.
 //
-#include "PMS5003T.h"
 #include "display.h"
 #include "util.h"
 #include "vars.h"
@@ -11,9 +10,9 @@
 String mqtt_server, mqtt_username, mqtt_password;
 uint   mqtt_port;
 
-extern unsigned long  co2;      // co2
-extern PMS5003T::DATA pms_data; // pms data
-extern PMS5003T       pms;      // pms
+extern unsigned long co2;       // co2
+extern PMS_DATA      pms_data;  // pms data
+extern bool          pms_ready; // pms
 
 bool mqtt_connect(String server, String username, String password,
                   uint port = 1883) {
@@ -81,11 +80,11 @@ void publish_it_float(float value, const char *name, int dig) {
     const static portTickType task_freq_2      = pdMS_TO_TICKS(2000); // 2 sec
     for (;;) {
         if (mqtt_enable) {
-            unsigned long  local_co2;
-            PMS5003T::DATA local_pms_data{};
+            unsigned long   local_co2;
+            struct PMS_DATA local_pms_data {};
 
             if (xSemaphoreTake(mutex_pms, pdMS_TO_TICKS(500)) == pdTRUE) {
-                memcpy(&local_pms_data, &pms_data, sizeof(PMS5003T::DATA));
+                memcpy(&local_pms_data, &pms_data, sizeof(pms_data));
                 xSemaphoreGive(mutex_pms);
                 local_co2 = co2;
                 if (local_co2) {

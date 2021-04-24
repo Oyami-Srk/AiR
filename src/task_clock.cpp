@@ -19,6 +19,8 @@ const int   dst_offset_sec = 0;                // Our china does not have DST
 
 ErriezDS1302 rtc(DS1302_CLK_PIN, DS1302_IO_PIN, DS1302_CE_PIN);
 
+[[noreturn]] void task_clock(void *param);
+
 void clock_setup() {
     if (!rtc.begin()) {
 #if DEBUG
@@ -41,6 +43,8 @@ void clock_setup() {
     };
 
     settimeofday(&tv, &tz);
+
+    xTaskCreate(task_clock, "clock", 1024 * 4, NULL, 1, NULL);
 }
 
 void printLocalTime() {

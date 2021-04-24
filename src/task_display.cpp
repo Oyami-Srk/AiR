@@ -3,7 +3,6 @@
 //
 #define USE_FAST_PINIO
 
-#include "PMS5003T.h"
 #include "display.h"
 #include "util.h"
 #include "vars.h"
@@ -91,20 +90,20 @@ const static uint8_t *sidebar_index[] = {bitmap_home, bitmap_data, bitmap_info,
 const static size_t sidebar_size           = 4;
 const static size_t max_bottom_text_length = (ILI9225_LCD_HEIGHT - 13 - 1) / 6;
 
-int            last_day        = 88;
-int            last_min        = 88;
-int            last_hour       = 88;
-int            last_sec        = 88;
-unsigned long  last_co2        = 9999;
-uint8_t *      last_co2_status = NULL;
-PMS5003T::DATA last_pms_data;
-int            last_emotion      = -1;
-int            last_display_page = 9999;
-bool           page_turned       = false;
+int             last_day        = 88;
+int             last_min        = 88;
+int             last_hour       = 88;
+int             last_sec        = 88;
+unsigned long   last_co2        = 9999;
+uint8_t *       last_co2_status = NULL;
+struct PMS_DATA last_pms_data;
+int             last_emotion      = -1;
+int             last_display_page = 9999;
+bool            page_turned       = false;
 
-extern unsigned long  co2;      // co2
-extern PMS5003T::DATA pms_data; // pms data
-extern PMS5003T       pms;      // pms
+extern unsigned long   co2;       // co2
+extern struct PMS_DATA pms_data;  // pms data
+extern bool            pms_ready; // pms
 
 void display_draw_sidebar(int current = 0) {
     if (current >= sidebar_size)
@@ -181,8 +180,16 @@ void display_resetup() {
     display_draw_statusbar();
 }
 
+[[noreturn]] void task_display(void *param);
+
+void task_display_later_start(void *param) {
+    vTaskDelay(pdMS_TO_TICKS(1000)); // wait 1 sec for other initialization
+    xTaskCreate(task_display, "display", 1024 * 4, NULL, 2, NULL);
+    vTaskDelete(NULL); // delete this task
+}
+
 void display_setup() {
-    memset(&last_pms_data, 0, sizeof(PMS5003T::DATA));
+    memset(&last_pms_data, 0, sizeof(pms_data));
     hspi.begin(TFT_CLK, -1, TFT_SDI, TFT_CS);
     tft.begin(hspi);
     tft.setOrientation(3);
@@ -195,6 +202,9 @@ void display_setup() {
     display_resetup();
 
     pinMode(34, INPUT_PULLDOWN);
+
+    xTaskCreate(task_display_later_start, "display_start", 1024 * 4, NULL, 2,
+                NULL);
 }
 
 void update_display();
@@ -344,11 +354,11 @@ void home_screen() {
     }
 
     // print pms data
-    PMS5003T::DATA local_pms_data{};
-    memset(&local_pms_data, 0, sizeof(PMS5003T::DATA));
+    struct PMS_DATA local_pms_data {};
+    memset(&local_pms_data, 0, sizeof(pms_data));
     float temp = 0, humd = 0;
     if (xSemaphoreTake(mutex_pms, pdMS_TO_TICKS(500)) == pdTRUE) {
-        memcpy(&local_pms_data, &pms_data, sizeof(PMS5003T::DATA));
+        memcpy(&local_pms_data, &pms_data, sizeof(pms_data));
         xSemaphoreGive(mutex_pms);
         temp = local_pms_data.TEMP / 10.0f;
         humd = local_pms_data.HUMD / 10.0f;
@@ -373,7 +383,7 @@ void home_screen() {
             tft.drawText(10 + 40 + 8, 118, String(local_pms_data.PM_AE_UG_2_5),
                          COLOR_WHITE);
         }
-        memcpy(&last_pms_data, &local_pms_data, sizeof(PMS5003T::DATA));
+        memcpy(&last_pms_data, &local_pms_data, sizeof(pms_data));
     }
     const int emo_position_neg_x = 50;
     const int emo_position_neg_y = 50;
@@ -402,10 +412,10 @@ void init_detail_screen() {
     }
 
 void detail_screen() {
-    PMS5003T::DATA local_pms_data{};
-    memset(&local_pms_data, 0, sizeof(PMS5003T::DATA));
+    struct PMS_DATA local_pms_data {};
+    memset(&local_pms_data, 0, sizeof(pms_data));
     if (xSemaphoreTake(mutex_pms, pdMS_TO_TICKS(500)) == pdTRUE) {
-        memcpy(&local_pms_data, &pms_data, sizeof(PMS5003T::DATA));
+        memcpy(&local_pms_data, &pms_data, sizeof(pms_data));
         xSemaphoreGive(mutex_pms);
         tft.setFont(Terminal11x16);
         PMS_DETAIL_PRINT(26, 27, PM_AE_UG_1_0)
@@ -422,6 +432,7 @@ void detail_screen() {
         PMS_DETAIL_PRINT(83, 126, ABOVE_0dot5_um)
         PMS_DETAIL_PRINT(124, 126, ABOVE_1dot0_um)
         PMS_DETAIL_PRINT(164, 126, ABOVE_2dot5_um)
+        memcpy(&last_pms_data, &local_pms_data, sizeof(pms_data));
     }
 }
 

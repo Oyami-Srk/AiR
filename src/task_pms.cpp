@@ -2,7 +2,6 @@
 // Created by Shiroko on 2021/4/13.
 //
 
-#include "PMS5003T.h"
 #include "util.h"
 #include "vars.h"
 #include <Arduino.h>
@@ -21,10 +20,16 @@ SoftwareSerial pms_serial;
 #else
 HardwareSerial pms_serial(0);
 #endif
-PMS5003T::DATA pms_data;
-PMS5003T       pms(pms_serial, &pms_data);
+
+struct PMS_DATA pms_data;
+bool            pms_ready = false;
+
+[[noreturn]] void task_pms(void *param);
 
 void pms_setup() {
+    memset(&pms_data, 0, sizeof(pms_data));
+    assert(sizeof(pms_data) == 24);
+
 #ifndef USE_SOFTWARE_SERIAL
     pms_serial.begin(9600, SERIAL_8N1, PMS_GPIO, PMS_GPIO, false, 256);
 #else
@@ -33,20 +38,21 @@ void pms_setup() {
     pms_serial.begin(9600, SWSERIAL_8N1, PMS_GPIO, PMS_GPIO);
 #endif
     pms_serial.flush();
+
+    xTaskCreate(task_pms, "PMS", 1024 * 8, NULL, 1, NULL);
 }
 
 [[noreturn]] void task_pms(void *param) {
-    assert(sizeof(PMS5003T::DATA) == 24);
     for (;;) {
         pms_serial.begin(9600, SERIAL_8N1, PMS_GPIO, PMS_GPIO, false, 256);
-        //        pms.loop();
         uint8_t buffer_start[2] = {0x42, 0x4D};
         uint8_t buffer[30];
-        pms.status = PMS5003T::STATUS_WAITING;
+        pms_ready = false;
         if (pms_serial.find(buffer_start, 2)) {
             pms_serial.readBytes(buffer, 30);
-            auto     _data       = &pms_data;
-            uint8_t *_payload    = buffer + 2;
+            auto     _data    = &pms_data;
+            uint8_t *_payload = buffer + 2;
+            xSemaphoreTake(mutex_pms, pdMS_TO_TICKS(portMAX_DELAY));
             _data->PM_FE_UG_1_0  = makeWord(_payload[0], _payload[1]);
             _data->PM_FE_UG_2_5  = makeWord(_payload[2], _payload[3]);
             _data->PM_FE_UG_10_0 = makeWord(_payload[4], _payload[5]);
@@ -63,16 +69,15 @@ void pms_setup() {
 
             _data->TEMP = makeWord(_payload[20], _payload[21]);
             _data->HUMD = makeWord(_payload[22], _payload[23]);
-            pms.status  = PMS5003T::STATUS_OK;
+            xSemaphoreGive(mutex_pms);
+            pms_ready = true;
         }
-        if (pms.status == PMS5003T::STATUS_OK) {
 #if DEBUG
+        if (pms_ready) {
             Serial.printf("Temp: %.2f\n", pms_data.TEMP / 10.0f);
-#endif
-#if DEBUG
             Serial.printf("HUMD: %.2f%%\n", pms_data.HUMD / 10.0f);
-#endif
         }
+#endif
         pms_serial.end();
         vTaskDelay(pdMS_TO_TICKS(500));
     }

@@ -7,6 +7,28 @@
 #include <PubSubClient.h>
 #include <freertos/semphr.h>
 
+struct PMS_DATA {
+    // Factory environment
+    uint16_t PM_FE_UG_1_0;
+    uint16_t PM_FE_UG_2_5;
+    uint16_t PM_FE_UG_10_0;
+
+    // Atmospheric environment
+    uint16_t PM_AE_UG_1_0;
+    uint16_t PM_AE_UG_2_5;
+    uint16_t PM_AE_UG_10_0;
+
+    //
+    uint16_t ABOVE_0dot3_um;
+    uint16_t ABOVE_0dot5_um;
+    uint16_t ABOVE_1dot0_um;
+    uint16_t ABOVE_2dot5_um;
+
+    // T part2
+    uint16_t TEMP;
+    uint16_t HUMD;
+};
+
 extern bool           fs_usable;   // whether LittleFS usable
 extern bool           wifi_enable; // whether WiFi is enabled
 extern bool           mqtt_enable; // whether mqtt is enable

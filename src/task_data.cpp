@@ -1,7 +1,6 @@
 //
 // Created by Shiroko on 2021/4/17.
 //
-#include "PMS5003T.h"
 #include "util.h"
 #include "vars.h"
 #include <Arduino.h>
@@ -10,9 +9,9 @@
 
 #define DATA_SAVE_INTERVAL 5000 // in ms
 
-extern unsigned long  co2;      // co2
-extern PMS5003T::DATA pms_data; // pms data
-extern PMS5003T       pms;      // pms
+extern unsigned long   co2;       // co2
+extern struct PMS_DATA pms_data;  // pms data
+extern bool            pms_ready; // pms
 
 #define MAX_BYTE (600 * 1024)
 
@@ -22,7 +21,7 @@ extern PMS5003T       pms;      // pms
         //        pdMS_TO_TICKS(1000 * 60 * 30); // every 30 min in release
         pdMS_TO_TICKS(1000 * 120); // every 120 sec in debug
 
-    while (co2 == 0 || pms.status != PMS5003T::STATUS_OK)
+    while (co2 == 0 || !pms_ready)
         vTaskDelay(pdMS_TO_TICKS(50));
 
     //    vTaskDelay(pdMS_TO_TICKS(10000));
@@ -33,11 +32,11 @@ extern PMS5003T       pms;      // pms
         unsigned long position;
         file.read((uint8_t *)&position, 4);
         file.seek(position, SeekSet);
-        unsigned long  local_co2;
-        PMS5003T::DATA local_pms_data{};
+        unsigned long   local_co2;
+        struct PMS_DATA local_pms_data {};
 
         if (xSemaphoreTake(mutex_pms, pdMS_TO_TICKS(500)) == pdTRUE) {
-            memcpy(&local_pms_data, &pms_data, sizeof(PMS5003T::DATA));
+            memcpy(&local_pms_data, &pms_data, sizeof(pms_data));
             xSemaphoreGive(mutex_pms);
             local_co2 = co2;
             uint8_t buffer[32]; // 32 byte buffer
@@ -47,7 +46,7 @@ extern PMS5003T       pms;      // pms
             unsigned long *pCO2  = (unsigned long *)(buffer + 4);
             time(pTime);
             *pCO2 = local_co2;
-            memcpy(buffer + 4 + 4, &local_pms_data, sizeof(PMS5003T::DATA));
+            memcpy(buffer + 4 + 4, &local_pms_data, sizeof(pms_data));
 
             // write file
             file.write(buffer, 32);
@@ -80,10 +79,10 @@ void data_setup() {
                    });
     http_server.on(
         "/api/get_current_data", HTTP_GET, [](AsyncWebServerRequest *request) {
-            unsigned long  local_co2;
-            PMS5003T::DATA local_pms_data{};
+            unsigned long   local_co2;
+            struct PMS_DATA local_pms_data {};
 
-            memcpy(&local_pms_data, &pms_data, sizeof(PMS5003T::DATA));
+            memcpy(&local_pms_data, &pms_data, sizeof(pms_data));
             local_co2 = co2;
             time_t time_v;
             time(&time_v);

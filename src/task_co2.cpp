@@ -7,10 +7,9 @@
 #include <HardwareSerial.h>
 //#include <SoftwareSerial.h>
 
-#define S8_SERIAL_BUS 2
+#define CO2_SERIAL_BUS 2
 
-HardwareSerial S8(S8_SERIAL_BUS);
-// SoftwareSerial S8(16, 17);
+HardwareSerial CO2(CO2_SERIAL_BUS);
 
 byte          command_read_co2[] = {0xFF, 0x01, 0x86, 0x00, 0x00,
                            0x00, 0x00, 0x00, 0x79};
@@ -18,7 +17,7 @@ byte          response[]         = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 int           co2_value_scale    = 1;
 unsigned long co2                = 0;
 
-bool co2_send_command(Stream *serial = &S8, byte *cmd = command_read_co2,
+bool co2_send_command(Stream *serial = &CO2, byte *cmd = command_read_co2,
                       int cmd_len = 9, byte *resp = response,
                       int resp_len = 9) {
     while (!serial->available()) {
@@ -49,12 +48,15 @@ unsigned long co2_read_response(byte *resp  = response,
         return 0;
 }
 
-void s8_setup() {
-    S8.begin(9600);
-    S8.flush();
+[[noreturn]] void task_co2(void *param);
+
+void co2_setup() {
+    CO2.begin(9600);
+    CO2.flush();
+    xTaskCreate(task_co2, "CO2", 1024 * 8, NULL, 3, NULL);
 }
 
-[[noreturn]] void task_s8(void *param) {
+[[noreturn]] void task_co2(void *param) {
     for (;;) {
         if (co2_send_command()) {
             if (xSemaphoreTake(mutex_co2, portMAX_DELAY) == pdTRUE) {

@@ -10,7 +10,7 @@ u8_t           setup_mode;
 AsyncWebServer http_server(80);
 int            display_page;
 
-SemaphoreHandle_t mutex_co2;
+SemaphoreHandle_t mutex_co2; // 4bytes manipulate is atomic, no need for lock.
 SemaphoreHandle_t mutex_pms;
 
 WiFiClient   wifi_client;
