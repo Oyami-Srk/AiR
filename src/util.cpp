@@ -1,12 +1,19 @@
-//
-// Created by Shiroko on 2021/4/13.
-//
+/*!
+ * \file util.cpp
+ *
+ * This is library contains useful functions.
+ *
+ * \copyright GNU Public License V3.0
+ */
 
 #include "util.h"
 #include "soc/timer_group_reg.h"
 #include "soc/timer_group_struct.h"
 #include <utility>
 
+/*!
+ * \brief Feed the ESP32 watch dog.
+ */
 void feed_dog() {
     // feed dog 0
     TIMERG0.wdt_wprotect = TIMG_WDT_WKEY_VALUE; // write enable
@@ -18,6 +25,11 @@ void feed_dog() {
     TIMERG1.wdt_wprotect = 0;                   // write protect
 }
 
+/*!
+ * \brief Calculate the goodness of temperature
+ * @param temp temperature value
+ * @return goodness of temperature, 1 means good, 2 means not bad, 3 means bad.
+ */
 int temp_goodness(float temp) {
     if ((temp >= 18 && temp <= 25)) {
         return 1;
@@ -28,6 +40,11 @@ int temp_goodness(float temp) {
     return 3;
 }
 
+/*!
+ * \brief Calculate the goodness of humidity
+ * @param humd humidity value
+ * @return goodness of humidity, 1 means good, 2 means not bad, 3 means bad.
+ */
 int humd_goddness(float humd) {
     if (humd >= 40 && humd <= 70) {
         return 1;
@@ -38,6 +55,11 @@ int humd_goddness(float humd) {
     return 3;
 }
 
+/*!
+ * \brief Calculate the goodness of CO2
+ * @param co2 CO2 value
+ * @return goodness of CO2, 1 means good, 2 means not bad, 3 means bad.
+ */
 int co2_goddness(unsigned long co2) {
     if (co2 <= 800)
         return 1;
@@ -47,6 +69,13 @@ int co2_goddness(unsigned long co2) {
 }
 
 // 0 - smile 1 - straight 2 - bad
+/*!
+ * \brief Evaluate algorithm used for emotional icon drawing.
+ * @param co2 CO2 value
+ * @param temp Temperature value
+ * @param humd Humidity value
+ * @return reference to drawing emotional icon
+ */
 int evaluate_air(unsigned long co2, float temp, float humd) {
     int t = temp_goodness(temp);
     int h = humd_goddness(humd);
@@ -58,6 +87,11 @@ int evaluate_air(unsigned long co2, float temp, float humd) {
     return 2;
 }
 
+/*!
+ * \brief Decode url encoded string
+ * @param input url encoded string
+ * @return decoded string
+ */
 String urlDecode(String input) {
     String s = std::move(input);
     s.replace("%20", " ");

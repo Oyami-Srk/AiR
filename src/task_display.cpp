@@ -1,6 +1,10 @@
-//
-// Created by Shiroko on 2021/4/9.
-//
+/*!
+ * \file task_display.cpp
+ *
+ * This module manipulates internal TFT display.
+ *
+ * \copyright GNU Public License V3.0
+ */
 #define USE_FAST_PINIO
 
 #include "display.h"
@@ -34,6 +38,16 @@ bool display_task_running   = false;
 int  ip_line_pos            = 0;
 bool status_bar_need_redraw = false;
 
+/*!
+ * \brief Draw Wi-Fi status on statusbar.
+ *
+ * insider value is used to determinate whether this method is called from task
+ * it self to avoid the glitch when calling from other module while display task
+ * is still operating. （Omitted for the rest)
+ *
+ * @param ip IP address
+ * @param insider indicator
+ */
 void display_draw_WiFi(const String &ip, bool insider) {
     if (!display_task_running || insider) {
         tft.drawBitmap(0, 1, bitmap_wifi, 16, 16, COLOR_WHITE);
@@ -46,6 +60,10 @@ void display_draw_WiFi(const String &ip, bool insider) {
         status_bar_need_redraw = true;
 }
 
+/*!
+ * \brief Draw MQTT status on statusbar
+ * @param insider indicator
+ */
 void display_draw_mqtt(bool insider) {
     if (!display_task_running || insider)
         tft.drawBitmap(16, 1, bitmap_mqtt, 16, 16,
@@ -54,6 +72,11 @@ void display_draw_mqtt(bool insider) {
         status_bar_need_redraw = true;
 }
 
+/*!
+ * \brief Draw Transmitting status on statusbar
+ * @param enable is this status enable?
+ * @param insider indicator
+ */
 void display_draw_transmit(bool enable, bool insider) {
     if (!display_task_running || insider)
         tft.drawBitmap(48, 1, bitmap_transmissing, 16, 16,
@@ -62,10 +85,17 @@ void display_draw_transmit(bool enable, bool insider) {
         status_bar_need_redraw = true;
 }
 
-void display_set_brigntness(int8_t brigntness) {
-    ledcWrite(TFT_BRIGNTNESS_CHANNEL, brigntness);
+/*!
+ * \brief Set the brightness of display
+ * @param brightness brightness value from 0 to 255
+ */
+void display_set_brigntness(int8_t brightness) {
+    ledcWrite(TFT_BRIGNTNESS_CHANNEL, brightness);
 }
 
+/*!
+ * \brief Rebuild the status bar's frame and redraw all status.
+ */
 void display_draw_statusbar() {
     tft.drawLine(1, 16, tft.maxX(), 16, COLOR_WHITE);
     tft.drawLine(65, 1, 65, 15, COLOR_DARKGREY);
@@ -105,6 +135,10 @@ extern unsigned long   co2;       // co2
 extern struct PMS_DATA pms_data;  // pms data
 extern bool            pms_ready; // pms
 
+/*!
+ * \brief Draw sidebar
+ * @param current indicator of current selected page.
+ */
 void display_draw_sidebar(int current = 0) {
     if (current >= sidebar_size)
         return;
@@ -118,7 +152,12 @@ void display_draw_sidebar(int current = 0) {
     }
 }
 
-// dont use \n in the string.
+/*!
+ * \brief Print text on bottom text area.
+ * \note Do not pass string with '\n' in it.
+ * @param s String to be printed.
+ * @param insider indicator
+ */
 void display_draw_bottom_text(const String &s, bool insider) {
     _currentFont original_font = tft.getFont();
     tft.setFont(Terminal6x8);
@@ -139,7 +178,13 @@ void display_draw_bottom_text(const String &s, bool insider) {
 const static uint8_t PROGMEM smile_y[] = {0, 1, 2, 3, 3, 3, 4, 4,
                                           4, 3, 3, 3, 2, 1, 0};
 
-// 0=smile 1=straight 2=frown
+/*!
+ * \brief Draw emotional icon (32x32) on given position.
+ * @param type emotional icon type. 0 means smile, 1 means straight face, 2
+ * means frown face.
+ * @param x position x for left corner of icon.
+ * @param y position y like x.
+ */
 void draw_emotion_icon_32x32(int type, int x, int y) {
     tft.drawCircle(x + 16, y + 16, 15, COLOR_GREEN);
     tft.drawCircle(x + 16, y + 16, 16, COLOR_GREEN);
@@ -169,6 +214,9 @@ void draw_emotion_icon_32x32(int type, int x, int y) {
     }
 }
 
+/*!
+ * \brief Rebuild all frame of display. Used to re-setup after display clear
+ */
 void display_resetup() {
     tft.drawRectangle(0, 0, tft.maxX() - 1, tft.maxY() - 1, COLOR_GRAY);
 
@@ -182,12 +230,21 @@ void display_resetup() {
 
 [[noreturn]] void task_display(void *param);
 
+/*!
+ * \brief No loop task. Only to be executed to initialize real display task.
+ * @param param FreeRTOS task param.
+ */
 void task_display_later_start(void *param) {
     vTaskDelay(pdMS_TO_TICKS(1000)); // wait 1 sec for other initialization
     xTaskCreate(task_display, "display", 1024 * 4, NULL, 2, NULL);
     vTaskDelete(NULL); // delete this task
 }
 
+/*!
+ * \brief Display setup.
+ * Setup display and some local data.
+ * Draw the frame of display.
+ */
 void display_setup() {
     memset(&last_pms_data, 0, sizeof(pms_data));
     hspi.begin(TFT_CLK, -1, TFT_SDI, TFT_CS);
@@ -203,12 +260,16 @@ void display_setup() {
 
     pinMode(34, INPUT_PULLDOWN);
 
-    xTaskCreate(task_display_later_start, "display_start", 1024 * 4, NULL, 2,
+    xTaskCreate(task_display_later_start, "display_start", 1024 * 4, NULL, 4,
                 NULL);
 }
 
 void update_display();
 
+/*!
+ * \brief Real display task. Update screen every 1 second.
+ * @param param FreeRTOS task param
+ */
 [[noreturn]] void task_display(void *param) {
     static portTickType       last_wake_time = xTaskGetTickCount();
     const static portTickType task_freq =
@@ -222,7 +283,10 @@ void update_display();
 }
 
 // used by other task
-
+/*!
+ * \brief clear wifi status. interface to other modules.
+ * @param insider indicator
+ */
 void display_clear_wifi(bool insider) {
     if (!display_task_running || insider) {
         tft.fillRectangle(1, 1, 15, 15, COLOR_BLACK);
@@ -234,6 +298,10 @@ void display_clear_wifi(bool insider) {
         status_bar_need_redraw = true;
 }
 
+/*!
+ * \brief draw setup status. interface to other modules.
+ * @param insider indicator
+ */
 void display_draw_setup(bool insider) {
     if (!display_task_running || insider) {
         if (setup_mode)
@@ -244,6 +312,12 @@ void display_draw_setup(bool insider) {
         status_bar_need_redraw = true;
 }
 
+/*!
+ * \brief print text on bottom text area. interface to other modules.
+ * @param s String to be printed
+ * @param insider indicator
+ * @return always 0
+ */
 int print_log(const String &s, bool insider) {
     if (!display_task_running || insider)
         display_draw_bottom_text(s, insider);
@@ -259,6 +333,9 @@ int print_log(const String &s, bool insider) {
 #define SEP_1_POSITION (10 + 16 * 2 + 2)
 #define SEP_2_POSITION (10 + 16 * 5 - 7)
 
+/*!
+ * \brief Built the frame of home screen.
+ */
 void init_home_screen() {
     tft.setFont(Terminal12x16);
     tft.drawBitmap(10, 85, bitmap_wendu, 32, 16, COLOR_WHITE);
@@ -270,6 +347,9 @@ void init_home_screen() {
     tft.drawBitmap(10, 58, bitmap_co2, 54, 21, COLOR_WHITE);
 }
 
+/*!
+ * \brief Update home screen.
+ */
 void home_screen() {
     // print time and date
     struct tm time_info;
@@ -400,10 +480,16 @@ void home_screen() {
     }
 }
 
+/*!
+ * \brief Build the frame of detail screen
+ */
 void init_detail_screen() {
     tft.drawBitmap(4, 17, bitmap_details, 200, 144, COLOR_WHITE);
 }
 
+/*!
+ * \brief Macro to simplify PMS print process.
+ */
 #define PMS_DETAIL_PRINT(x, y, d)                                              \
     if (last_pms_data.d != local_pms_data.d || page_turned) {                  \
         tft.drawText((x) + 4, (y) + 17, String(last_pms_data.d), COLOR_BLACK); \
@@ -411,6 +497,9 @@ void init_detail_screen() {
                      COLOR_WHITE);                                             \
     }
 
+/*!
+ * \brief Update detail screen.
+ */
 void detail_screen() {
     struct PMS_DATA local_pms_data {};
     memset(&local_pms_data, 0, sizeof(pms_data));
@@ -436,8 +525,16 @@ void detail_screen() {
     }
 }
 
+/*!
+ * \brief empty for info screen which is just showing an image.
+ */
 void info_screen() {}
 
+/*!
+ * \brief Display update method.
+ * Detected which page is selected and do corresponding process to init if it
+ * changed. And update screen.
+ */
 void update_display() {
     if (display_page != last_display_page) {
         tft.clear();

@@ -1,5 +1,11 @@
-// All variables should be defined in the vars.h to be used across the whole
-// project
+/*!
+ * \file vars.cpp
+ *
+ * This is declaration and initialization of variables used across the whole
+ * project
+ *
+ * \copyright GNU Public License V3.0
+ */
 #include "vars.h"
 #include <Arduino.h>
 

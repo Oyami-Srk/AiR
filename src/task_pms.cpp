@@ -1,6 +1,11 @@
-//
-// Created by Shiroko on 2021/4/13.
-//
+/*!
+ * \file task_pms.cpp
+ *
+ * This is module for reading PMS5003T sensor.
+ * Using mutex_pms to ensure data consistency.
+ *
+ * \copyright GNU Public License V3.0
+ */
 
 #include "util.h"
 #include "vars.h"
@@ -26,6 +31,9 @@ bool            pms_ready = false;
 
 [[noreturn]] void task_pms(void *param);
 
+/*!
+ * \brief Setup PMS sensor's serial.
+ */
 void pms_setup() {
     memset(&pms_data, 0, sizeof(pms_data));
     assert(sizeof(pms_data) == 24);
@@ -42,6 +50,10 @@ void pms_setup() {
     xTaskCreate(task_pms, "PMS", 1024 * 8, NULL, 1, NULL);
 }
 
+/*!
+ * \brief Read the sensor every 500ms.
+ * @param param FreeRTOS task param.
+ */
 [[noreturn]] void task_pms(void *param) {
     for (;;) {
         pms_serial.begin(9600, SERIAL_8N1, PMS_GPIO, PMS_GPIO, false, 256);

@@ -1,6 +1,11 @@
-//
-// Created by Shiroko on 2021/4/17.
-//
+/*!
+ * \file task_data.cpp
+ *
+ * This module serves sensors' datas with HTTP API and save them to internal
+ * flash chip to be read as historic record for Web page.
+ *
+ * \copyright GNU Public License V3.0
+ */
 #include "util.h"
 #include "vars.h"
 #include <Arduino.h>
@@ -15,11 +20,20 @@ extern bool            pms_ready; // pms
 
 #define MAX_BYTE (600 * 1024)
 
+/*!
+ * \brief Read and Write sensors' data to Flash chip.
+ * Write every 120 second for debug or 30 minutes for release.
+ *
+ * @param param FreeRTOS task param.
+ */
 [[noreturn]] void task_data(void *param) {
     static portTickType       last_wake_time = xTaskGetTickCount();
     const static portTickType task_freq =
-        //        pdMS_TO_TICKS(1000 * 60 * 30); // every 30 min in release
+#if DEBUG
         pdMS_TO_TICKS(1000 * 120); // every 120 sec in debug
+#else
+        pdMS_TO_TICKS(1000 * 60 * 30); // every 30 min in release
+#endif
 
     while (co2 == 0 || !pms_ready)
         vTaskDelay(pdMS_TO_TICKS(50));
@@ -72,6 +86,10 @@ extern bool            pms_ready; // pms
     }
 }
 
+/*!
+ * \brief Register HTTP-API for data serving, create historic record file if
+ * not exists and create task for saving data.
+ */
 void data_setup() {
     http_server.on("/api/get_raw_data", HTTP_GET,
                    [](AsyncWebServerRequest *request) {

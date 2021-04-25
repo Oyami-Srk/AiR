@@ -1,3 +1,10 @@
+/*!
+ * \file main.cpp
+ * This is the main file of this project. Containing two Arduino Core functions.
+ * But we only need setup for the initialization of our modules.
+ *
+ * \copyright GNU Public License V3.0
+ */
 #define DEBUG 1
 
 #define LFS_YES_TRACE
@@ -19,6 +26,12 @@ extern void clock_setup();
 extern void button_setup();
 extern void data_setup();
 extern void mqtt_setup();
+
+/*!
+ * \brief Arduino Core Entrance point.
+ *
+ * This function initialized global variables and other module.
+ */
 
 void setup() {
     setup_mode   = 0; // nothing in setup by default
@@ -66,4 +79,11 @@ void setup() {
         mqtt_setup();
 }
 
+/*!
+ * \brief Arduino Core main loop task. Been deleted after start.
+ *
+ * We have our custom FreeRTOS' tasks in each module. Thus this built-in
+ * main loop is useless and may cause some bug. For that, we delete it after
+ * run.
+ */
 void loop() { vTaskDelete(NULL); }

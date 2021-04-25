@@ -1,6 +1,10 @@
-//
-// Created by Shiroko on 2021/4/6.
-//
+/*!
+ * \file task_wifi.cpp
+ *
+ * This is module for Wi-Fi management.
+ *
+ * \copyright GNU Public License V3.0
+ */
 
 #define LFS_YES_TRACE
 
@@ -33,6 +37,10 @@ wifi_event_id_t event_got_ip, event_connect, event_disconnect;
 int               disconnected_retry_count = 0;
 SemaphoreHandle_t enable_loop;
 
+/*!
+ * \brief Start Wi-Fi configuring mode.
+ * Switch to AP_STA mode to be connected from other device to setup.
+ */
 void wifi_config_start() {
     setup_mode |= SETUP_MODE_WIFI;
 #if DEBUG
@@ -56,6 +64,9 @@ void wifi_config_start() {
     display_draw_setup(false);
 }
 
+/*!
+ * \brief Leave Wi-Fi configuring mode.
+ */
 void wifi_config_stop() {
     setup_mode &= ~SETUP_MODE_WIFI;
 #if DEBUG
@@ -66,6 +77,9 @@ void wifi_config_stop() {
     print_log("Leaving WiFi Setup mode.");
 }
 
+/*!
+ * \brief Try to connect to Wi-Fi with credentials saved on chip.
+ */
 void wifi_connect() {
     File wifi_cfg = LITTLEFS.open("/wifi.cfg", "r");
     auto ssid     = wifi_cfg.readStringUntil('\n');
@@ -95,6 +109,10 @@ void wifi_connect() {
 
 extern void mqtt_setup_on_wifi();
 
+/*!
+ * \brief Setup Wi-Fi module.
+ * Register HTTP service for API and Web page and callback for Wi-Fi event.
+ */
 void wifi_setup() {
     // register http server
     http_server.on(

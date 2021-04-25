@@ -1,6 +1,11 @@
-//
-// Created by Shiroko on 2021/4/17.
-//
+/*!
+ * \file task_mqtt.cpp
+ *
+ * This module initialized MQTT service and registered MQTT setting page and
+ * its HTTP-API.
+ *
+ * \copyright GNU Public License V3.0
+ */
 #include "display.h"
 #include "util.h"
 #include "vars.h"
@@ -14,6 +19,14 @@ extern unsigned long co2;       // co2
 extern PMS_DATA      pms_data;  // pms data
 extern bool          pms_ready; // pms
 
+/*!
+ * \brief connect to mqtt broker by given credentials
+ * @param server broker server address.
+ * @param username login username, could be empty.
+ * @param password login password, could be empty.
+ * @param port server port, default is 1883.
+ * @return
+ */
 bool mqtt_connect(String server, String username, String password,
                   uint port = 1883) {
     mqtt_client.setServer(server.c_str(), port);
@@ -32,6 +45,11 @@ bool mqtt_connect(String server, String username, String password,
                                password.c_str());
 }
 
+/*!
+ * \brief publish unsigned value to mqtt broker.
+ * @param value value to be published
+ * @param name value name
+ */
 void publish_it(unsigned long value, const char *name) {
     char addr_buf[32];
     sprintf(addr_buf, "AiR/%s", name);
@@ -45,6 +63,11 @@ void publish_it(unsigned long value, const char *name) {
 #endif
 }
 
+/*!
+ * \brief publish float value to mqtt broker.
+ * @param value value to be published
+ * @param name value name
+ */
 void publish_it_float(float value, const char *name, int dig) {
     char addr_buf[32];
     sprintf(addr_buf, "AiR/%s", name);
@@ -58,6 +81,11 @@ void publish_it_float(float value, const char *name, int dig) {
 #endif
 }
 
+/*!
+ * \brief Task for execute mqtt client's loop to keep connected with broker.
+ * Process loop every 200ms.
+ * @param param FreeRTOS task param
+ */
 [[noreturn]] void task_mqtt_loop(void *param) {
     static portTickType       last_wake_time = xTaskGetTickCount();
     const static portTickType task_freq      = pdMS_TO_TICKS(200); // 200 ms
@@ -75,6 +103,10 @@ void publish_it_float(float value, const char *name, int dig) {
     }
 }
 
+/*!
+ * \brief data publish task. publish sensor data every 2 second.
+ * @param param FreeRTOS task param.
+ */
 [[noreturn]] void task_mqtt_publish(void *param) {
     static portTickType       last_wake_time_2 = xTaskGetTickCount();
     const static portTickType task_freq_2      = pdMS_TO_TICKS(2000); // 2 sec
@@ -116,8 +148,9 @@ void publish_it_float(float value, const char *name, int dig) {
     }
 }
 
-// wifi_event_id_t event_got_ip_for_mqtt;
-
+/*!
+ * \brief MQTT setup. Register HTTP API and setting page.
+ */
 void mqtt_setup() {
     http_server.on("/mqtt_setting.html", HTTP_GET,
                    [](AsyncWebServerRequest *request) {
@@ -190,8 +223,14 @@ void mqtt_setup() {
                 display_draw_mqtt();
             }
         });
+    xTaskCreate(task_mqtt_loop, "mqtt", 1024 * 8, NULL, 1, NULL);
+    xTaskCreate(task_mqtt_publish, "mqtt_publish", 1024 * 8, NULL, 1, NULL);
 }
 
+/*!
+ * \brief interface to WiFi module for connect to mqtt broker after network
+ * available
+ */
 void mqtt_setup_on_wifi() {
     if (!LITTLEFS.exists("/mqtt.cfg")) {
         mqtt_enable = false;
@@ -226,6 +265,4 @@ void mqtt_setup_on_wifi() {
             }
         }
     }
-    xTaskCreate(task_mqtt_loop, "mqtt", 1024 * 8, NULL, 1, NULL);
-    xTaskCreate(task_mqtt_publish, "mqtt_publish", 1024 * 8, NULL, 1, NULL);
 }
